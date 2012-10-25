@@ -36,6 +36,7 @@ BrowserID defines messages using the [JavaScript Object Signing and Encryption (
 
 A BrowserID public key is based [JSON Web Key (JWK)](http://tools.ietf.org/html/draft-ietf-jose-json-web-key-01), but since that standard is in flux, we have chosen a readable variant, with explicit versioning:
 
+```javascript
        {"version": "2012.08.15",
         "algorithm":"RSA",
         "modulus": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx
@@ -46,6 +47,7 @@ A BrowserID public key is based [JSON Web Key (JWK)](http://tools.ietf.org/html/
     w0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw",
         "exponent":"AQAB",
         "kid":"key-2011-04-29"}
+```
 
 This structure includes:
 
@@ -56,6 +58,7 @@ This structure includes:
 
 When more than one key might represent the same entity, a key-value pair object of cryptographic keys is used, and the <tt>kid</tt> is specified as the key of that key-value pair, rather than inside the object.
 
+```javascript
      ....
      "publicKeys": {
        "key-2011-04-29":
@@ -70,7 +73,7 @@ When more than one key might represent the same entity, a key-value pair object 
             "exponent":"AQAB"}
        }
      ....
-
+```
 
 ### Identity Certificate ###
 
@@ -83,14 +86,19 @@ An Identity Certificate is a JSON Web Token (JWT) object with the following clai
 
 The principal is a JSON object that indicates the type of principal, e.g.
 
+```javascript
     {"email": "bob@example.com"}
+```
 
 or to specify a domain but not yet a user:
 
+```javascript
     {"domain": "example.com"}
+```
 
 A complete JWT set of claims then looks like:
 
+```javascript
     {
       "iss": "example.com",
       "exp": "1313971280961",
@@ -103,6 +111,7 @@ A complete JWT set of claims then looks like:
         "email": "john@example.com"
       }
     }
+```
 
 Which, when signed, becomes a base64url-encoded data structure which looks like the following (with linebreaks and truncated values for for easier reading; the full string has exactly two periods and no whitespace):
 
@@ -114,8 +123,9 @@ Which, when signed, becomes a base64url-encoded data structure which looks like 
 
 An Identity Certificate SHOULD reference, using the normal JWT mechanism, the <tt>kid</tt> of the public key that should be used for verification. This is indicated in the JWT header:
 
+```javascript
     {"typ":"JWT", "alg":"RSA", "kid": "key-2011-04-29"}
-
+```
 
 #### Chained Certificates ####
 
@@ -131,9 +141,11 @@ Certificate delegation is tricky and potentially opens up avenues for attacks. T
 
 To allow chaining, a certificate must include:
 
+```javascript
     ...
       "allowChaining": true
     ...
+```
 
 The following fields are considered in the certificate chain verification: <tt>principal</tt>, <tt>exp</tt>. These constraints are combined. A principal indicating an email address is considered a subset of a principal for the corresponding domain. A principal must be included in any certificate, or it is assumed that the null principal is being certified, and that chain becomes useless. A later certificate cannot certify a principal that isn't included within an earlier certificate. And a later certificate cannot extend the expiration time of an earlier certificate in a chain.
 
@@ -158,11 +170,15 @@ An assertion might look like (with line breaks for readability):
 
 which is a JWT with header:
 
+```javascript
     {"typ":"JWT", "alg":"RS256"}
+```
 
 and a payload of:
 
+```javascript
     {"exp":1320280579437, "aud":"http://localhost:10001"}
+```
 
 ### Backed Identity Assertion ###
 
@@ -192,6 +208,7 @@ The value of the <tt>provisioning</tt> field MUST also be a relative reference t
 
 For example:
 
+```javascript
      {
         "publicKeys": {
            "generated-on-2012-06-20":
@@ -205,6 +222,7 @@ For example:
         "authentication": "/browserid/sign_in.html",
         "provisioning": "/browserid/provision.html"
      }
+```
 
 #### BrowserID Delegated Support Document ####
 
@@ -212,10 +230,11 @@ A BrowserID delegated-support document MUST be a well-formed JSON document with 
 
 For example:
 
+```javascript
      {
         "authority": "otherexample.com"
      }
-
+```
 
 Web-Site Signin Flow
 --
@@ -248,6 +267,7 @@ Typically on the web, login sessions are implemented with cookies and are comple
 
 ### Example Code
 
+```javascript
     /* get the email address of currently logged in user from your server */
     var emailAddressOfCurrentlyLoggedInUser = ...;
 
@@ -278,6 +298,7 @@ Typically on the web, login sessions are implemented with cookies and are comple
     logoutButton.onclick = function() {
       navigator.id.logout(); // this will cause `onlogout` to be invoked.
     };
+```
 
 ### API
 
@@ -333,7 +354,7 @@ Consider Alice, a user of <tt>EyeDee.me</tt>, with email address <tt>alice@eyede
 * The user-agent loads, in an invisible IFRAME, the provisioning URL <tt>https://eyedee.me/browserid/provision.html</tt>, delivering to that URL any cookies that have previously been set and making available to that page's JavaScript any <tt>localStorage</tt> that corresponds to the <tt>eyedee.me</tt> origin.
 * The provisioning URL's script determines if Alice is properly authenticated and, if so, triggers key generation within the user agent, obtains the public key, signs it, and registers the resulting certificate with the user agent:
 
-<pre>
+```javascript
  // get parameters of provisioning
  navigator.id.beginProvisioning(function(email, cert_duration) {
 
@@ -355,11 +376,11 @@ Consider Alice, a user of <tt>EyeDee.me</tt>, with email address <tt>alice@eyede
         });
     });
  });
-</pre>
+```
 
 * If Alice is not properly authenticated, the user agent loads the authentication URL <tt>https://eyedee.me/browserid/authenticate.html</tt> in a dialog interface, where Alice can then proceed to log into <tt>EyeDee.me</tt> using whatever flow/method EyeDee.me wishes.
 
-<pre>
+```javascript
  // set up UI
  navigator.id.beginAuthentication(function(email) {
    // update UI to display the email address
@@ -374,7 +395,7 @@ Consider Alice, a user of <tt>EyeDee.me</tt>, with email address <tt>alice@eyede
  function onCancel() {
    navigator.id.raiseAuthenticationFailure("user canceled");
  }
-</pre>
+```
 
 Once this is successfully completed, the user-agent returns to the BrowserID user-interface, and attempts to load the provisioning URL as in the previous step.
 
@@ -617,30 +638,30 @@ The domain SHOULD deliver HTML and JavaScript at that URI, which it can expect t
 The domain SHOULD determine, without any user-facing content, the user's state of authentication with the domain. The domain MAY use cookies or localStorage to make this determination.
 
 The domain MUST call, in JavaScript:
-<pre>
+```javascript
 navigator.id.beginProvisioning(provisionEmailFunction);
-</pre>
+```
 with <tt>provisionEmailFunction</tt> a function that accepts an email address and a certificate validity duration as parameters.
 
 Once the email address determined, the domain SHOULD check that the user is properly authenticated to use this email address. If she isn't, the domain SHOULD call
-<pre>
+```javascript
  navigator.id.raiseProvisioningFailure(explanation)
-</pre>
+```
 with <tt>explanation</tt> a string explaining the failure. The domain SHOULD concludes all JavaScript activity after making this call.
 
 You SHOULD use one of the following <tt>explanation</tt> codes:
 * <tt>user is not authenticated as target user</tt> - Indicates UA should show sign in screen again, due to an error
 
 If the user is properly authenticated, the domain MUST call:
-<pre>
+```javascript
  navigator.id.genKeyPair(gotPublicKey);
-</pre>
+```
 with <tt>gotPublicKey</tt> a function that accepts a JWK-string-formatted public-key.
 
 The domain's JavaScript SHOULD then send this JWK string to the domain's backend server. The domain's backend server SHOULD certify this key along with the email address provided to its <tt>provisionEmailFunction</tt> function, and an expiration date at least 1 minutes in the future. The backend server SHOULD NOT issue a certificate valid longer than 24 hours. The domain's backend server SHOULD then deliver an Identity Certificate back to its JavaScript context. The domain's JavaScript MUST finally call:
-<pre>
+```javascript
  navigator.id.registerCertificate(certificate);
-</pre>
+```
 with the Identity Certificate string.
 
 Assertion Verification
